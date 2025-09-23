@@ -49,8 +49,7 @@ uv run sqlite-utils memory data/tags.json "select name, count from tags order by
 uv run python -m newspaper --url=https://cnsmaryland.org/2024/04/23/maryland-colleges-have-produced-over-300-nfl-draft-picks/ -of=text | llm -m groq/moonshotai/kimi-k2-instruct-0905 "Read the text and provide no more than 5 topics."
 ```
 
-** note that it took me a minute to get this working because it needed me to install `lxml_html_clean` first
+*note that it took me a while to get this working because some packages weren't installed and i didn't understand the error messages, so i had to use chatgpt to help troubleshoot (https://chatgpt.com/share/68d20f06-6338-800c-aa01-b5de87e3cd04). just wanted to let you know lol*
 
-https://cnsmaryland.org/tag/Sports
 
 
