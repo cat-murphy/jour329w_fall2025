@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tags Search & Sort</title>
+    <style>
+        body {
+            font-family: 'Georgia', 'Times New Roman', Times, serif;
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(120deg, #ffe5e0 0%, #ffb6a2 100%);
+            /* playful coral gradient */
+        }
+        .container {
+            position: relative;
+            z-index: 1;
+            /* ...existing code... */
+        }
+        .container {
+            max-width: 1100px;
+            margin: 3em auto 3em auto;
+            background: #fff;
+            border-radius: 18px;
+            box-shadow: 0 6px 32px 0 rgba(60,80,120,0.10), 0 1.5px 6px 0 rgba(60,80,120,0.08);
+            padding: 2.5em 2.5em 2.5em 2.5em;
+            border: 2.5px solid #ff7f50;
+        }
+        h1 {
+            color: #ff5a36;
+            font-size: 2.1em;
+            margin-top: 0;
+            margin-bottom: 1.2em;
+            letter-spacing: 0.01em;
+            text-align: center;
+            text-shadow: 0 2px 8px #ffe5e0;
+        }
+        #search, #topicDropdown {
+            padding: 0.7em 1em;
+            width: 80%;
+            max-width: 350px;
+            display: block;
+            margin: 0 auto 1.5em auto;
+            font-size: 1.1em;
+            font-family: inherit;
+            border: 1.5px solid #ffb6a2;
+            border-radius: 8px;
+            background: #fff6f3;
+            transition: border 0.2s, box-shadow 0.2s;
+        }
+        #search:focus {
+            border: 1.5px solid #ff7f50;
+            outline: none;
+            box-shadow: 0 0 0 2px #ffe5e0;
+        }
+        table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px 0 rgba(60,80,120,0.04);
+        }
+        th, td {
+            padding: 0.85em 1.1em;
+            text-align: left;
+            font-family: inherit;
+        }
+        th {
+            background: #ffe5e0;
+            cursor: pointer;
+            font-size: 1.05em;
+            color: #ff5a36;
+            border-bottom: 2px solid #ffb6a2;
+            user-select: none;
+            transition: background 0.2s, color 0.2s;
+        }
+        th:hover {
+            background: #ffb6a2;
+            color: #fff;
+        }
+        tr {
+            transition: background 0.18s;
+        }
+        tr:nth-child(even) td {
+            background: #fff6f3;
+        }
+        tr:nth-child(odd) td {
+            background: #fff;
+        }
+        tr:hover td {
+            background: #ffe5e0 !important;
+        }
+        .sort-arrow {
+            font-size: 1em;
+            margin-left: 0.3em;
+            color: #ff7f50;
+        }
+        #showMoreBtn {
+            margin: 1.5em auto 0 auto;
+            display: block;
+            padding: 0.7em 2.2em;
+            font-size: 1.1em;
+            font-family: inherit;
+            border: none;
+            background: linear-gradient(90deg, #ff7f50 0%, #ffb6a2 100%);
+            color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px 0 rgba(255,127,80,0.10);
+            cursor: pointer;
+            transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
+        }
+        #showMoreBtn:hover {
+            background: linear-gradient(90deg, #ff5a36 0%, #ff7f50 100%);
+            box-shadow: 0 4px 16px 0 rgba(255,127,80,0.18);
+            transform: translateY(-2px) scale(1.03);
+        }
+        @media (max-width: 1200px) {
+            .container { max-width: 98vw; padding: 1em 0.5em; }
+            h1 { font-size: 1.3em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="similarModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.18);z-index:2000;align-items:center;justify-content:center;">
+            <div id="similarModalContent" style="background:#fff6f3;min-width:320px;max-width:95vw;width:370px;margin:auto auto;border-radius:18px;box-shadow:0 8px 32px 0 rgba(60,80,120,0.18);padding:0;position:relative;">
+                <button id="closeSimilarModal" style="position:absolute;top:12px;right:18px;background:none;border:none;font-size:1.7em;color:#ff7f50;cursor:pointer;z-index:10;">&times;</button>
+                <div id="similarModalBody"></div>
+            </div>
+        </div>
+        <h1>Tags Search & Sort</h1>
+    <select id="topicDropdown" style="padding:0.7em 1em;width:80%;max-width:350px;display:block;margin:0 auto 1em auto;font-size:1.1em;border-radius:8px;border:1.5px solid #ffb6a2;background:#fff6f3;font-family:inherit;transition:border 0.2s,box-shadow 0.2s;">
+            <option value="all">Browse by topic...</option>
+        </select>
+    <input type="text" id="search" placeholder="Search tags...">
+
+    </style>
+        <table id="tagsTable">
+            <thead>
+                <tr>
+                    <th id="nameHeader">Name <span class="sort-arrow" id="sortArrow"></span></th>
+                    <th id="countHeader">Count <span class="sort-arrow" id="countArrow">▼</span></th>
+                    <th id="recentHeader">Last 6 Months</th>
+                    <th id="firstUsedHeader">First Used</th>
+                    <th id="lastUsedHeader">Last Used</th>
+                    <th id="topicHeader">Topic</th>
+                    <th id="headlinesHeader">Recent Headlines</th>
+                    <th id="similarHeader">Similar Tags</th>
+                </tr>
+            </thead>
+            <tbody id="tagsBody">
+                <!-- Tags will be inserted here -->
+            </tbody>
+        </table>
+        <button id="showMoreBtn" style="display:none">Show More</button>
+    </div>
+    <script>
+        let tags = [];
+        let sortKey = 'count';
+        let sortAsc = false;
+        let filteredTags = [];
+        let displayCount = 10;
+        let topics = [
+            "Maryland",
+            "Government & Politics",
+            "Health & Climate",
+            "Sports",
+            "Arts & Culture"
+        ];
+        let tagTopicMap = {}; // tag id -> topic
+
+        function renderTable() {
+            const tbody = document.getElementById('tagsBody');
+            tbody.innerHTML = '';
+            const toShow = filteredTags.slice(0, displayCount);
+            const searchVal = document.getElementById('search').value.toLowerCase();
+            // Track open dropdown
+            let openDropdown = null;
+            toShow.forEach(tag => {
+                const tr = document.createElement('tr');
+                const tdName = document.createElement('td');
+                let tagHtml = '';
+                if (searchVal && tag.name.toLowerCase().includes(searchVal)) {
+                    // Highlight the matching part
+                    const idx = tag.name.toLowerCase().indexOf(searchVal);
+                    const before = tag.name.slice(0, idx);
+                    const match = tag.name.slice(idx, idx + searchVal.length);
+                    const after = tag.name.slice(idx + searchVal.length);
+                    tagHtml = `${before}<span class=\"highlight\">${match}</span>${after}`;
+                } else {
+                    tagHtml = tag.name;
+                }
+                // Hyperlink if tag.link exists
+                if (tag.link) {
+                    tagHtml = `<a href=\"${tag.link}\" target=\"_blank\" rel=\"noopener\">${tagHtml}</a>`;
+                }
+                tdName.innerHTML = tagHtml;
+                const tdCount = document.createElement('td');
+                tdCount.textContent = tag.count;
+                // Last 6 months usage column
+                const tdRecent = document.createElement('td');
+                tdRecent.textContent = tag.recentCount !== undefined ? tag.recentCount : '';
+                const tdTopic = document.createElement('td');
+                tdTopic.textContent = tagTopicMap[tag.id] || '';
+                // Similar tags dropdown button
+                const tdSimilar = document.createElement('td');
+                const btn = document.createElement('button');
+                btn.innerHTML = '<span style="display:inline-block;vertical-align:middle;font-size:1.2em;">🔗</span> <span style="font-weight:600;font-size:1em;">Similar</span>';
+                btn.title = 'Show similar tags';
+                btn.style.background = 'linear-gradient(90deg, #ffb6a2 0%, #ff7f50 100%)';
+                btn.style.border = 'none';
+                btn.style.borderRadius = '18px';
+                btn.style.padding = '0.35em 1.1em';
+                btn.style.cursor = 'pointer';
+                btn.style.fontSize = '1em';
+                btn.style.fontFamily = "Georgia, 'Times New Roman', Times, serif";
+                btn.style.color = '#fff';
+                btn.style.boxShadow = '0 2px 8px 0 rgba(255,127,80,0.10)';
+                btn.style.transition = 'background 0.18s, box-shadow 0.18s, transform 0.12s';
+                btn.onmouseenter = () => {
+                    btn.style.background = 'linear-gradient(90deg, #ff7f50 0%, #ffb6a2 100%)';
+                    btn.style.transform = 'scale(1.06)';
+                    btn.style.boxShadow = '0 4px 16px 0 rgba(255,127,80,0.18)';
+                };
+                btn.onmouseleave = () => {
+                    btn.style.background = 'linear-gradient(90deg, #ffb6a2 0%, #ff7f50 100%)';
+                    btn.style.transform = 'scale(1)';
+                    btn.style.boxShadow = '0 2px 8px 0 rgba(255,127,80,0.10)';
+                };
+                btn.onclick = function(e) {
+                    e.stopPropagation();
+                    // Close any open dropdown
+                    if (openDropdown) {
+                        openDropdown.remove();
+                        openDropdown = null;
+                    }
+                    // Create dropdown
+                    const dropdown = document.createElement('div');
+                    dropdown.style.position = 'absolute';
+                    dropdown.style.background = '#fff6f3';
+                    dropdown.style.border = '1.5px solid #ffb6a2';
+                    dropdown.style.borderRadius = '10px';
+                    dropdown.style.boxShadow = '0 4px 16px 0 rgba(60,80,120,0.10)';
+                    dropdown.style.padding = '1em 1.2em 1em 1.2em';
+                    dropdown.style.zIndex = 100;
+                    dropdown.style.minWidth = '220px';
+                    dropdown.style.maxWidth = '350px';
+                    dropdown.style.top = (tr.offsetTop + tr.offsetHeight) + 'px';
+                    dropdown.style.left = (tr.offsetLeft + tr.offsetWidth - 250) + 'px';
+                    dropdown.style.marginTop = '0.2em';
+                    dropdown.style.fontSize = '1em';
+                    dropdown.style.color = '#ff5a36';
+                    dropdown.innerHTML = `<div style='font-weight:600;margin-bottom:0.7em;'>Similar tags to <span style='color:#b23c1a;'>${tag.name}</span>:</div>`;
+                    const similar = findSimilarTags(tag);
+                    if (similar.length > 0) {
+                        dropdown.innerHTML += '<ul style="margin:0 0 0 0.7em;padding:0;list-style:square;">' +
+                            similar.map(sim => `<li style='margin-bottom:0.4em;'><a href="${sim.link || '#'}" target="_blank" style="color:#ff5a36;text-decoration:none;font-weight:500;transition:color 0.15s;">${sim.name}</a></li>`).join('') + '</ul>';
+                    } else {
+                        dropdown.innerHTML += '<div style="color:#b23c1a;">No similar tags found.</div>';
+                    }
+                    // Close on click outside
+                    setTimeout(() => {
+                        document.addEventListener('click', closeDropdown, { once: true });
+                    }, 0);
+                    function closeDropdown(ev) {
+                        if (!dropdown.contains(ev.target)) {
+                            dropdown.remove();
+                            openDropdown = null;
+                        }
+                    }
+                    // Position dropdown below row
+                    tr.parentNode.insertBefore(dropdown, tr.nextSibling);
+                    openDropdown = dropdown;
+                };
+                tdSimilar.appendChild(btn);
+                tr.appendChild(tdName);
+                tr.appendChild(tdCount);
+                tr.appendChild(tdRecent);
+                // First Used column
+                const tdFirstUsed = document.createElement('td');
+                tdFirstUsed.textContent = tag.firstUsed || '';
+                tr.appendChild(tdFirstUsed);
+                // Last Used column
+                const tdLastUsed = document.createElement('td');
+                tdLastUsed.textContent = tag.lastUsed || '';
+                tr.appendChild(tdLastUsed);
+                tr.appendChild(tdTopic);
+                // Headlines dropdown column
+                const tdHeadlines = document.createElement('td');
+                const headlinesBtn = document.createElement('button');
+                headlinesBtn.innerHTML = '<span style="display:inline-block;vertical-align:middle;font-size:1.2em;">📰</span> <span style="font-weight:600;font-size:1em;">Headlines</span>';
+                headlinesBtn.title = 'Show recent headlines';
+                headlinesBtn.style.background = 'linear-gradient(90deg, #ffb6a2 0%, #ff7f50 100%)';
+                headlinesBtn.style.border = 'none';
+                headlinesBtn.style.borderRadius = '18px';
+                headlinesBtn.style.padding = '0.35em 1.1em';
+                headlinesBtn.style.cursor = 'pointer';
+                headlinesBtn.style.fontSize = '1em';
+                headlinesBtn.style.fontFamily = "Georgia, 'Times New Roman', Times, serif";
+                headlinesBtn.style.color = '#fff';
+                headlinesBtn.style.boxShadow = '0 2px 8px 0 rgba(255,127,80,0.10)';
+                headlinesBtn.style.transition = 'background 0.18s, box-shadow 0.18s, transform 0.12s';
+                headlinesBtn.onmouseenter = () => {
+                    headlinesBtn.style.background = 'linear-gradient(90deg, #ff7f50 0%, #ffb6a2 100%)';
+                    headlinesBtn.style.transform = 'scale(1.06)';
+                    headlinesBtn.style.boxShadow = '0 4px 16px 0 rgba(255,127,80,0.18)';
+                };
+                headlinesBtn.onmouseleave = () => {
+                    headlinesBtn.style.background = 'linear-gradient(90deg, #ffb6a2 0%, #ff7f50 100%)';
+                    headlinesBtn.style.transform = 'scale(1)';
+                    headlinesBtn.style.boxShadow = '0 2px 8px 0 rgba(255,127,80,0.10)';
+                };
+                headlinesBtn.onclick = function(e) {
+                    e.stopPropagation();
+                    if (openDropdown) { openDropdown.remove(); openDropdown = null; }
+                    const dropdown = document.createElement('div');
+                    dropdown.style.position = 'absolute';
+                    dropdown.style.background = '#fff6f3';
+                    dropdown.style.border = '1.5px solid #ffb6a2';
+                    dropdown.style.borderRadius = '10px';
+                    dropdown.style.boxShadow = '0 4px 16px 0 rgba(60,80,120,0.10)';
+                    dropdown.style.padding = '1em 1.2em 1em 1.2em';
+                    dropdown.style.zIndex = 100;
+                    dropdown.style.minWidth = '220px';
+                    dropdown.style.maxWidth = '350px';
+                    dropdown.style.top = (tr.offsetTop + tr.offsetHeight) + 'px';
+                    dropdown.style.left = (tr.offsetLeft + tr.offsetWidth - 250) + 'px';
+                    dropdown.style.marginTop = '0.2em';
+                    dropdown.style.fontSize = '1em';
+                    dropdown.style.color = '#ff5a36';
+                    dropdown.innerHTML = `<div style='font-weight:600;margin-bottom:0.7em;'>Recent headlines for <span style='color:#b23c1a;'>${tag.name}</span>:</div>`;
+                    if (tag.recentHeadlines && tag.recentHeadlines.length > 0) {
+                        dropdown.innerHTML += '<ul style="margin:0 0 0 0.7em;padding:0;list-style:square;">' +
+                            tag.recentHeadlines.map(h => `<li style='margin-bottom:0.4em;'><a href="${h.link}" target="_blank" style="color:#ff5a36;text-decoration:none;font-weight:500;transition:color 0.15s;">${h.title}</a> <span style='color:#888;font-size:0.95em;'>&nbsp;(${h.date})</span></li>`).join('') + '</ul>';
+                    } else {
+                        dropdown.innerHTML += '<div style="color:#b23c1a;">No recent headlines found.</div>';
+                    }
+                    setTimeout(() => { document.addEventListener('click', closeDropdown, { once: true }); }, 0);
+                    function closeDropdown(ev) {
+                        if (!dropdown.contains(ev.target)) { dropdown.remove(); openDropdown = null; }
+                    }
+                    tr.parentNode.insertBefore(dropdown, tr.nextSibling);
+                    openDropdown = dropdown;
+                };
+                tdHeadlines.appendChild(headlinesBtn);
+                tr.appendChild(tdHeadlines);
+                tr.appendChild(tdSimilar);
+                tbody.appendChild(tr);
+            });
+            function findSimilarTags(tag) {
+                const name = tag.name.toLowerCase();
+                // Similarity: substring or Levenshtein distance <= 3, not itself
+                return tags.filter(t => {
+                    if (t.id === tag.id) return false;
+                    const tname = t.name.toLowerCase();
+                    if (tname.includes(name) || name.includes(tname)) return true;
+                    if (levenshtein(name, tname) <= 3) return true;
+                    return false;
+                }).slice(0, 5); // limit to 5
+            }
+            // Levenshtein distance helper
+            function levenshtein(a, b) {
+                const matrix = [];
+                let i;
+                for (i = 0; i <= b.length; i++) matrix[i] = [i];
+                let j;
+                for (j = 0; j <= a.length; j++) matrix[0][j] = j;
+                for (i = 1; i <= b.length; i++) {
+                    for (j = 1; j <= a.length; j++) {
+                        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                            matrix[i][j] = matrix[i - 1][j - 1];
+                        } else {
+                            matrix[i][j] = Math.min(
+                                matrix[i - 1][j - 1] + 1, // substitution
+                                matrix[i][j - 1] + 1,     // insertion
+                                matrix[i - 1][j] + 1      // deletion
+                            );
+                        }
+                    }
+                }
+                return matrix[b.length][a.length];
+            }
+            // Similar tags modal logic
+            function showSimilarModal(tag) {
+                const modal = document.getElementById('similarModal');
+                const modalBody = document.getElementById('similarModalBody');
+                const similar = findSimilarTags(tag);
+                if (similar.length > 0) {
+                    modalBody.innerHTML = `
+                        <div style=\"background:linear-gradient(90deg,#ff7f50 0%,#ffb6a2 100%);color:#fff;padding:1.1em 1.2em 0.7em 1.2em;border-top-left-radius:16px;border-top-right-radius:16px;border-bottom:2px solid #ffb6a2;font-size:1.13em;font-weight:600;letter-spacing:0.01em;box-shadow:0 2px 8px 0 rgba(255,127,80,0.08);margin-bottom:0.5em;\">
+                            Similar tags to <span style='font-weight:700;'>${tag.name}</span>
+                        </div>
+                        <ul style='margin:0.9em 0 0.5em 0.7em;padding:0 0 0 0.7em;list-style:square;'>
+                            ` + similar.map(sim => `<li style='margin-bottom:0.5em;'><a href=\"${sim.link || '#'}\" target=\"_blank\" style=\"color:#ff5a36;text-decoration:none;font-weight:500;transition:color 0.15s;\">${sim.name}</a></li>`).join('') + `
+                        </ul>
+                    `;
+                } else {
+                    modalBody.innerHTML = `
+                        <div style=\"background:linear-gradient(90deg,#ff7f50 0%,#ffb6a2 100%);color:#fff;padding:1.1em 1.2em 0.7em 1.2em;border-top-left-radius:16px;border-top-right-radius:16px;border-bottom:2px solid #ffb6a2;font-size:1.13em;font-weight:600;letter-spacing:0.01em;box-shadow:0 2px 8px 0 rgba(255,127,80,0.08);margin-bottom:0.5em;\">
+                            No similar tags found for <span style='font-weight:700;'>${tag.name}</span>
+                        </div>
+                    `;
+                }
+                modal.style.display = 'flex';
+                // Add hover effect for links
+                modalBody.querySelectorAll('a').forEach(a => {
+                    a.addEventListener('mouseenter', function() { this.style.color = '#b23c1a'; });
+                    a.addEventListener('mouseleave', function() { this.style.color = '#ff5a36'; });
+                });
+            }
+            document.getElementById('closeSimilarModal').onclick = function() {
+                document.getElementById('similarModal').style.display = 'none';
+            };
+            document.getElementById('similarModal').onclick = function(e) {
+                if (e.target === this) this.style.display = 'none';
+            };
+            function findSimilarTags(tag) {
+                const name = tag.name.toLowerCase();
+                // Similarity: substring or Levenshtein distance <= 3, not itself
+                return tags.filter(t => {
+                    if (t.id === tag.id) return false;
+                    const tname = t.name.toLowerCase();
+                    if (tname.includes(name) || name.includes(tname)) return true;
+                    if (levenshtein(name, tname) <= 3) return true;
+                    return false;
+                }).slice(0, 5); // limit to 5
+            }
+            // Levenshtein distance helper
+            function levenshtein(a, b) {
+                const matrix = [];
+                let i;
+                for (i = 0; i <= b.length; i++) matrix[i] = [i];
+                let j;
+                for (j = 0; j <= a.length; j++) matrix[0][j] = j;
+                for (i = 1; i <= b.length; i++) {
+                    for (j = 1; j <= a.length; j++) {
+                        if (b.charAt(i - 1) === a.charAt(j - 1)) {
+                            matrix[i][j] = matrix[i - 1][j - 1];
+                        } else {
+                            matrix[i][j] = Math.min(
+                                matrix[i - 1][j - 1] + 1, // substitution
+                                matrix[i][j - 1] + 1,     // insertion
+                                matrix[i - 1][j] + 1      // deletion
+                            );
+                        }
+                    }
+                }
+                return matrix[b.length][a.length];
+            }
+
+            // Show/hide Show More button
+            const btn = document.getElementById('showMoreBtn');
+            if (filteredTags.length > displayCount) {
+                btn.style.display = '';
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+
+        function sortTags() {
+            filteredTags.sort((a, b) => {
+                let valA = a[sortKey];
+                let valB = b[sortKey];
+                if (sortKey === 'name') {
+                    valA = (valA || '').toLowerCase();
+                    valB = (valB || '').toLowerCase();
+                }
+                // For firstUsed/lastUsed, convert to Date for sorting
+                if (sortKey === 'firstUsed' || sortKey === 'lastUsed') {
+                    valA = valA ? new Date(valA) : new Date(0);
+                    valB = valB ? new Date(valB) : new Date(0);
+                }
+                if (valA < valB) return sortAsc ? -1 : 1;
+                if (valA > valB) return sortAsc ? 1 : -1;
+                return 0;
+            });
+        }
+
+        function filterTags(query) {
+            filteredTags = tags.filter(tag => {
+                return (tag.name || '').toLowerCase().includes(query.toLowerCase());
+            });
+            sortTags();
+            displayCount = 10;
+            renderTable();
+        }
+
+        document.getElementById('search').addEventListener('input', function() {
+            filterTags(this.value);
+        });
+
+        document.getElementById('nameHeader').addEventListener('click', function() {
+            if (sortKey === 'name') sortAsc = !sortAsc; else sortAsc = true;
+            sortKey = 'name';
+            document.getElementById('sortArrow').textContent = sortAsc ? '▲' : '▼';
+            document.getElementById('countArrow').textContent = '';
+            sortTags();
+            displayCount = 10;
+            renderTable();
+        });
+        document.getElementById('countHeader').addEventListener('click', function() {
+            if (sortKey === 'count') sortAsc = !sortAsc; else sortAsc = false;
+            sortKey = 'count';
+            document.getElementById('countArrow').textContent = sortAsc ? '▲' : '▼';
+            document.getElementById('sortArrow').textContent = '';
+            sortTags();
+            displayCount = 10;
+            renderTable();
+        });
+        document.getElementById('recentHeader').addEventListener('click', function() {
+            if (sortKey === 'recentCount') sortAsc = !sortAsc; else sortAsc = false;
+            sortKey = 'recentCount';
+            // Add sort arrow feedback (optional, for visual consistency)
+            document.getElementById('countArrow').textContent = '';
+            // You can add a new arrow span for recentHeader if desired
+            sortTags();
+            displayCount = 10;
+            renderTable();
+        });
+        document.getElementById('firstUsedHeader').addEventListener('click', function() {
+            if (sortKey === 'firstUsed') sortAsc = !sortAsc; else sortAsc = false;
+            sortKey = 'firstUsed';
+            document.getElementById('firstUsedArrow').textContent = sortAsc ? '▲' : '▼';
+            document.getElementById('lastUsedArrow').textContent = '';
+            document.getElementById('countArrow').textContent = '';
+            document.getElementById('sortArrow').textContent = '';
+            sortTags();
+            displayCount = 10;
+            renderTable();
+        });
+        document.getElementById('lastUsedHeader').addEventListener('click', function() {
+            if (sortKey === 'lastUsed') sortAsc = !sortAsc; else sortAsc = false;
+            sortKey = 'lastUsed';
+            document.getElementById('lastUsedArrow').textContent = sortAsc ? '▲' : '▼';
+            document.getElementById('firstUsedArrow').textContent = '';
+            document.getElementById('countArrow').textContent = '';
+            document.getElementById('sortArrow').textContent = '';
+            sortTags();
+            displayCount = 10;
+            renderTable();
+        });
+
+        document.getElementById('showMoreBtn').addEventListener('click', function() {
+            displayCount += 10;
+            renderTable();
+        });
+
+        // Populate topic dropdown
+        function populateTopicDropdown() {
+            const dropdown = document.getElementById('topicDropdown');
+            dropdown.innerHTML = '<option value="all">Browse by topic...</option>';
+            // Count tags per topic
+            const topicCounts = {};
+            tags.forEach(tag => {
+                const topic = tagTopicMap[tag.id] || '';
+                topicCounts[topic] = (topicCounts[topic] || 0) + 1;
+            });
+            topics.forEach(topic => {
+                const opt = document.createElement('option');
+                opt.value = topic;
+                opt.textContent = topic + (topicCounts[topic] ? ` (${topicCounts[topic]})` : ' (0)');
+                dropdown.appendChild(opt);
+            });
+        }
+
+        document.getElementById('topicDropdown').addEventListener('change', function() {
+            const topic = this.value;
+            if (topic === 'all') {
+                filteredTags = tags.slice();
+            } else {
+                filteredTags = tags.filter(tag => tagTopicMap[tag.id] === topic);
+            }
+            sortTags();
+            displayCount = 10;
+            renderTable();
+        });
+
+        // Load tags.json dynamically (relative path for this directory structure)
+    // Load posts and tags, then compute recent tag usage
+    Promise.all([
+            fetch('../../data/tags.json').then(async r => {
+                if (!r.ok) throw new Error('Failed to load tags.json');
+                const text = await r.text();
+                if (text.trim().startsWith('<')) throw new Error('tags.json is not valid JSON (HTML returned)');
+                return JSON.parse(text);
+            }),
+            fetch('./broswer/cns_maryland_posts.json').then(async r => {
+                if (!r.ok) throw new Error('Failed to load cns_maryland_posts.json');
+                const text = await r.text();
+                if (text.trim().startsWith('<')) throw new Error('cns_maryland_posts.json is not valid JSON (HTML returned)');
+                return JSON.parse(text);
+            })
+    ]).then(([tagsData, postsData]) => {
+        // Compute tag usage in last 6 months and collect recent headlines and first/last used dates
+        const now = new Date();
+        const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+        // Map: tag id -> count in last 6 months
+        const recentTagCounts = {};
+        // Map: tag id -> array of {title, date, link}
+        const tagHeadlines = {};
+        // Map: tag id -> array of all dates used
+        const tagDates = {};
+        postsData.forEach(post => {
+            const postDate = new Date(post.date);
+            (post.tags || []).forEach(tagId => {
+                const idNum = Number(tagId);
+                // Count for last 6 months
+                if (postDate >= sixMonthsAgo) {
+                    recentTagCounts[idNum] = (recentTagCounts[idNum] || 0) + 1;
+                }
+                // Collect headlines (all time, then sort by date)
+                if (!tagHeadlines[idNum]) tagHeadlines[idNum] = [];
+                tagHeadlines[idNum].push({
+                    title: post.title,
+                    date: postDate,
+                    link: post.link
+                });
+                // Collect all dates for first/last used
+                if (!tagDates[idNum]) tagDates[idNum] = [];
+                tagDates[idNum].push(postDate);
+            });
+        });
+        // For each tag, sort headlines by date desc and keep 5 most recent
+        tags = tagsData.map(tag => {
+            const idNum = Number(tag.id);
+            let headlines = tagHeadlines[idNum] || [];
+            headlines = headlines.sort((a, b) => b.date - a.date).slice(0, 5).map(h => ({
+                ...h,
+                date: (h.date instanceof Date ? h.date : new Date(h.date)).toLocaleDateString('en-US')
+            }));
+            // Compute first and last used dates
+            let firstUsed = '', lastUsed = '';
+            if (tagDates[idNum] && tagDates[idNum].length > 0) {
+                const sortedDates = tagDates[idNum].sort((a, b) => a - b);
+                firstUsed = (sortedDates[0] instanceof Date ? sortedDates[0] : new Date(sortedDates[0])).toLocaleDateString('en-US');
+                lastUsed = (sortedDates[sortedDates.length - 1] instanceof Date ? sortedDates[sortedDates.length - 1] : new Date(sortedDates[sortedDates.length - 1])).toLocaleDateString('en-US');
+            }
+            return { ...tag, recentCount: recentTagCounts[idNum] || 0, recentHeadlines: headlines, firstUsed, lastUsed };
+        });
+        // Debug: log tags with recent headlines
+        console.log('tags with recentHeadlines:', tags.filter(t => t.recentHeadlines && t.recentHeadlines.length > 0));
+        // Assign topics to tags using keyword matching
+        // Only use topics from topics.csv, and remove any extra/derived categories
+        const topicKeywords = {
+                    "Agriculture and Food": ["agriculture", "food", "nutrition", "farm", "horticulture", "aquaculture", "plant", "crop", "produce"],
+                    "Animals": ["animal", "wildlife", "veterinary", "pet", "dog", "cat", "horse", "conservation"],
+                    "Armed Forces and National Security": ["military", "veteran", "army", "navy", "air force", "security", "defense", "armed forces", "war", "intelligence"],
+                    "Arts & Culture": ["art", "culture", "music", "film", "movie", "literature", "theater", "museum", "library", "exhibition", "cultural", "performing arts"],
+                    "Civil Rights": ["civil rights", "discrimination", "race", "ethnicity", "gender", "abortion", "privacy", "first amendment", "equal protection", "due process", "liberties"],
+                    "Commerce": ["business", "commerce", "retail", "trade", "market", "consumer", "investment", "manufacturing", "distribution", "intellectual property"],
+                    "Congress": ["congress", "senate", "house of representatives", "legislative", "capitol", "committee", "oversight"],
+                    "Justice": ["justice", "crime", "criminal", "law enforcement", "prosecution", "prison", "corrections", "juvenile", "controlled substances", "sentencing"],
+                    "Budget": ["budget", "appropriation", "debt", "monetary", "finance", "economic", "inflation", "accounts"],
+                    "Education": ["education", "school", "student", "teacher", "academic", "college", "university", "aid", "loan", "teaching"],
+                    "Elections": ["election", "candidate", "vote", "voting", "primary", "general election", "political contest"],
+                    "Emergency Management": ["emergency", "disaster", "preparedness", "mitigation", "fire", "security", "disturbance", "recovery"],
+                    "Energy": ["energy", "oil", "gas", "coal", "nuclear", "solar", "wind", "hydropower", "electric", "utility", "power"],
+                    "Environmental Protection": ["environment", "pollution", "climate", "greenhouse", "mine", "oil spill", "waste", "recycling", "ecology", "coastal", "species", "invasive"],
+                    "Families": ["family", "child", "marriage", "domestic", "welfare", "abuse", "aging"],
+                    "Economy": ["economy", "bank", "finance", "credit", "debt", "investment", "insurance", "currency", "securities", "real estate"],
+                    "Trade": ["trade", "tariff", "import", "export", "agreement", "customs", "foreign investment", "border"],
+                    "Maryland Government and Politics": ["maryland", "governor", "state government", "md", "state agency", "maryland politics"],
+                    "Federal Government and Politics": ["federal government", "president", "federal agency", "usps", "postal", "federal politics"],
+                    "Health": ["health", "medicare", "medicaid", "disease", "treatment", "medical", "drug", "insurance", "hospital", "care", "facility"],
+                    "Housing": ["housing", "home", "homeless", "mortgage", "rehabilitation", "urban", "development", "construction", "fair housing"],
+                    "Immigration": ["immigration", "immigrant", "visa", "border", "customs", "refugee", "asylum", "foreign labor"],
+                    "International Affairs": ["international", "foreign", "diplomacy", "human rights", "united nations", "ngo", "arms control", "alliance", "tariff", "trade agreement"],
+                    "Labor and Employment": ["labor", "employment", "workforce", "wage", "union", "pension", "unemployment", "occupational safety"],
+                    "Law": ["law", "court", "judicial", "remedy", "dispute", "arbitration", "mediation", "constitutional"],
+                    "Native Americans": ["native american", "indian", "alaska native", "hawaiian", "tribe", "indigenous"],
+                    "Natural Resources": ["natural resource", "park", "forest", "land", "wilderness", "fisheries", "marine", "wildfire", "monument"],
+                    "Science & Technology": ["science", "technology", "research", "space", "stem", "cyber", "telecom", "digital", "journalism"],
+                    "History": ["history", "society", "policy science"],
+                    "Social Welfare": ["social security", "public assistance", "social service", "community service", "volunteer", "charity", "welfare"],
+                    "Sports": ["sport", "athletic", "recreation", "ncaa", "outdoor", "facility", "game", "team"],
+                    "Taxes": ["tax", "income", "excise", "property", "inheritance", "employment tax", "collection"],
+                    "Transportation and Public Works": ["transportation", "infrastructure", "travel", "tourism", "coast guard", "navigation", "public works"],
+                    "Chesapeake Bay": ["chesapeake bay", "crab", "oyster", "bay"],
+                    "Baltimore": ["baltimore"],
+                };
+                // New categories and keywords
+                const userCategories = [
+                    "Maryland",
+                    "Government & Politics",
+                    "Health & Climate",
+                    "Sports",
+                    "Arts & Culture"
+                ];
+                // Keywords for each category
+                const categoryKeywords = {
+                    "Maryland": [
+                        "maryland", "md", "annapolis", "baltimore", "prince george", "montgomery", "howard county", "anne arundel", "frederick county", "charles county", "wicomico county", "carroll county", "harford county", "cecil county", "calvert county", "st. mary's", "talbot county", "kent county", "queen anne", "dorchester county", "somerset county", "garrett county", "allegany county", "washington county", "caroline county", "rockville", "bethesda", "silver spring", "college park", "salisbury", "laurel", "bowie", "greenbelt", "takoma park", "hyattsville", "oxon hill", "gaithersburg", "ellicott city", "columbia", "catonsville", "randallstown", "towson", "dundalk", "pasadena", "severna park", "crofton", "glen burnie", "largo", "clinton", "fort washington", "temple hills", "suitland", "district heights", "forestville", "capitol heights", "langley park", "mount rainier", "riverdale park", "new carrollton", "cheverly", "bladensburg", "edmonston", "brentwood", "seat pleasant", "fairmount heights", "morningside", "berwyn heights", "university park"
+                    ],
+                    "Government & Politics": [
+                        "government", "politics", "governor", "president", "senate", "congress", "house", "mayor", "council", "delegate", "representative", "trump", "biden", "obama", "hogan", "moore", "o'malley", "cardin", "van hollen", "cummings", "harris", "ruppersberger", "sarbanes", "hoyer", "trone", "raskin", "brown", "mfume", "election", "campaign", "democrat", "republican", "gop", "legislature", "assembly", "politician", "d.c.", "same-sex marriage", "gun control", "abortion"
+                    ],
+                    "Health & Climate": [
+                        "health", "climate", "covid", "pandemic", "hospital", "doctor", "nurse", "disease", "virus", "cdc", "fda", "epa", "environment", "pollution", "weather", "storm", "hurricane", "flood", "heat", "cold", "vaccine", "public health", "mental health", "wellness", "medical", "insurance", "medicaid", "medicare", "opioids"
+                    ],
+                    "Sports": [
+                        "sports", "football", "basketball", "baseball", "soccer", "lacrosse", "hockey", "ravens", "orioles", "wizards", "capitals", "terps", "maryland terrapins", "nba", "nfl", "mlb", "ncaa", "athlete", "player", "coach", "team", "game", "match", "tournament", "league", "score", "win", "loss", "championship"
+                    ],
+                    "Arts & Culture": [
+                        "arts", "culture", "music", "theater", "theatre", "film", "movie", "cinema", "concert", "festival", "museum", "gallery", "exhibit", "dance", "literature", "book", "author", "poet", "painting", "sculpture", "art", "band", "symphony", "opera", "ballet", "performance", "show", "event"
+                    ]
+                };
+                tags.forEach(tag => {
+                    let assigned = false;
+                    const tagText = ((tag.name || '') + ' ' + (tag.description || ''));
+                    const tagTextLower = tagText.toLowerCase();
+                    let bestCategory = '';
+                    let bestScore = 0;
+                    // Try to assign by keyword/fuzzy match
+                    for (const [cat, keywords] of Object.entries(categoryKeywords)) {
+                        for (const kw of keywords) {
+                            if (tagTextLower.includes(kw)) {
+                                tagTopicMap[tag.id] = cat;
+                                assigned = true;
+                                break;
+                            }
+                            // Fuzzy: count partial matches
+                            let score = 0;
+                            if (kw.length > 3 && tagTextLower.includes(kw.slice(0, 4))) score += 1;
+                            if (kw.length > 5 && tagTextLower.includes(kw.slice(0, 6))) score += 1;
+                            if (score > bestScore) {
+                                bestScore = score;
+                                bestCategory = cat;
+                            }
+                        }
+                        if (assigned) break;
+                    }
+                    if (!assigned) tagTopicMap[tag.id] = bestCategory || userCategories[0];
+                });
+                filteredTags = tags.slice();
+                sortTags();
+                displayCount = 10;
+                populateTopicDropdown();
+                renderTable();
+            })
+            .catch(err => {
+                let msg = err && err.message ? err.message : 'Failed to load data';
+                document.getElementById('tagsBody').innerHTML = `<tr><td colspan="5" style="color:red">${msg}</td></tr>`;
+            });
+    </script>
+</body>
+</html>
