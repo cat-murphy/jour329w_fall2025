@@ -595,7 +595,7 @@
     ]).then(([tagsData, postsData]) => {
         // Compute tag usage in last 6 months and collect recent headlines and first/last used dates
         const now = new Date();
-        const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+        const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 12, now.getDate());
         // Map: tag id -> count in last 6 months
         const recentTagCounts = {};
         // Map: tag id -> array of {title, date, link}
