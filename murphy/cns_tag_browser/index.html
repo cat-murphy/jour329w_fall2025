@@ -586,7 +586,7 @@
                 if (text.trim().startsWith('<')) throw new Error('tags.json is not valid JSON (HTML returned)');
                 return JSON.parse(text);
             }),
-            fetch('./broswer/cns_maryland_posts.json').then(async r => {
+            fetch('./cns_maryland_posts.json').then(async r => {
                 if (!r.ok) throw new Error('Failed to load cns_maryland_posts.json');
                 const text = await r.text();
                 if (text.trim().startsWith('<')) throw new Error('cns_maryland_posts.json is not valid JSON (HTML returned)');
