@@ -1,0 +1,15 @@
+```
+topic_list = ["Local Government", "Education", "Public Safety", ...]  # Your list
+
+prompt = f"""
+Assign this news story to exactly ONE topic from the following list:
+{', '.join(topic_list)}
+
+Choose the topic that best represents what this story is primarily about.
+
+Title: {story['title']}
+Content: {story['content']}
+
+Return only the topic name from the list above.
+"""
+```
